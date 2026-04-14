@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>13K Games</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #fff;
+      font-family: 'Segoe UI', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      letter-spacing: 0.2em;
+      color: #7ef;
+      text-shadow: 0 0 20px #4af;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 3rem;
+      letter-spacing: 0.1em;
+    }
+
+    .games {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .card {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 260px;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: #4af;
+      box-shadow: 0 8px 30px rgba(68, 170, 255, 0.2);
+    }
+
+    .card .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      color: #eef;
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .play-btn {
+      display: inline-block;
+      margin-top: 1.2rem;
+      padding: 0.5rem 1.5rem;
+      background: #1a3a5a;
+      border: 1px solid #4af;
+      border-radius: 6px;
+      color: #7ef;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card:hover .play-btn {
+      background: #2a5a8a;
+    }
+
+    footer {
+      margin-top: 4rem;
+      color: #444;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>13K GAMES</h1>
+  <p class="subtitle">JS13K 遊戲合集 — 每款遊戲壓縮在 13KB 以內</p>
+
+  <div class="games">
+    <a class="card" href="GloomRunner.html">
+      <div class="icon">🌑</div>
+      <h2>黑暗迷宮</h2>
+      <p>在黑暗中探索迷宮，感知四周的危險，找到通往出口的路。</p>
+      <span class="play-btn">▶ 開始遊戲</span>
+    </a>
+
+    <a class="card" href="OrbitEscort.html">
+      <div class="icon">🛡️</div>
+      <h2>Core Defender</h2>
+      <p>保衛核心，操控軌道護盾，抵禦從四面八方湧來的敵人。</p>
+      <span class="play-btn">▶ 開始遊戲</span>
+    </a>
+  </div>
+
+  <footer>JS13K Games &mdash; 13KB or bust</footer>
+
+</body>
+</html>
