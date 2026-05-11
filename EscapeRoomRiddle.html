@@ -71,6 +71,14 @@
             background: #455A64;
         }
 
+        button.warning {
+            background: #795548;
+        }
+
+        button.warning:hover {
+            background: #5D4037;
+        }
+
         /* 輸入框樣式 */
         input[type="text"],
         textarea,
@@ -107,6 +115,7 @@
         .desc {
             font-size: 14px;
             color: #aaa;
+            line-height: 1.4;
         }
 
         #nodes-container {
@@ -200,6 +209,16 @@
             flex-direction: column;
         }
 
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-row button {
+            flex: 1;
+            padding: 12px;
+        }
+
         #share-link-container {
             display: none;
             flex-direction: column;
@@ -207,6 +226,44 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid #444;
+        }
+
+        /* JSON 匯入匯出 Modal */
+        #json-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .modal-content {
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #555;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content h3 {
+            color: #ff9800;
+            margin-bottom: 10px;
+        }
+
+        #json-io-textarea {
+            height: 350px;
+            font-family: monospace;
+            white-space: pre;
+            margin-bottom: 10px;
         }
 
         /* User Mode (遊戲 UI) */
@@ -324,7 +381,7 @@
         <div id="master-ui">
             <div class="header-bar">
                 <h1>🛠️ 視覺化劇本編輯器</h1>
-                <div class="desc">填寫表單即可設計劇情。請確保必須有一個 ID 為「start」的節點作為開頭。</div>
+                <div class="desc">直接填寫表單即可設計劇情。請確保必須有一個 ID 為「start」的節點。<br>進階玩家可使用「匯入/匯出 JSON」備份劇本。</div>
             </div>
 
             <div id="nodes-container">
@@ -332,13 +389,29 @@
             </div>
 
             <div class="master-actions">
-                <button id="btn-add-node" class="secondary" style="padding: 12px;">+ 新增劇情節點</button>
+                <div class="btn-row">
+                    <button id="btn-add-node" class="secondary">+ 新增劇情節點</button>
+                    <button id="btn-json-io" class="warning">📦 匯入 / 匯出 JSON</button>
+                </div>
                 <button id="btn-generate" style="padding: 12px; font-size: 18px;">✨ 生成分享連結 ✨</button>
 
                 <div id="share-link-container">
                     <div class="desc">你的專屬遊戲網址（已自動複製，可直接貼上分享）：</div>
                     <input type="text" id="share-link" readonly onclick="this.select()">
                     <button id="btn-test-play" style="background:#2196F3;">▶ 立即試玩</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- JSON 匯入/匯出 Modal -->
+        <div id="json-modal">
+            <div class="modal-content">
+                <h3>📦 JSON 劇本原始碼</h3>
+                <div class="desc" style="margin-bottom:10px;">你可以在此備份目前的劇本，或是將別人分享的 JSON 貼上來套用。</div>
+                <textarea id="json-io-textarea"></textarea>
+                <div class="btn-row">
+                    <button id="btn-json-apply">💾 套用變更</button>
+                    <button id="btn-json-close" class="danger">取消</button>
                 </div>
             </div>
         </div>
@@ -363,7 +436,7 @@
     </div>
 
     <script>
-        /** 預設劇本資料 (用於初次載入編輯器) */
+        /** 預設劇本資料 */
         const defaultScript = {
             "start": {
                 "speaker": "神秘聲音",
@@ -397,11 +470,20 @@
         const masterUI = document.getElementById('master-ui');
         const gameUI = document.getElementById('game-ui');
         const nodesContainer = document.getElementById('nodes-container');
+
+        // Master Actions
         const btnAddNode = document.getElementById('btn-add-node');
         const btnGenerate = document.getElementById('btn-generate');
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLinkInput = document.getElementById('share-link');
         const btnTestPlay = document.getElementById('btn-test-play');
+
+        // JSON Modal
+        const btnJsonIo = document.getElementById('btn-json-io');
+        const jsonModal = document.getElementById('json-modal');
+        const jsonTextarea = document.getElementById('json-io-textarea');
+        const btnJsonApply = document.getElementById('btn-json-apply');
+        const btnJsonClose = document.getElementById('btn-json-close');
 
         // Game UI Elements
         const speakerName = document.getElementById('speaker-name');
@@ -425,7 +507,6 @@
            Master Mode: 視覺化編輯器核心邏輯
         ========================================= */
 
-        // 動態建立一個「選項」的 HTML 結構
         function createOptionElement(optText = '', optNext = '') {
             const row = document.createElement('div');
             row.className = 'option-row';
@@ -439,7 +520,6 @@
             return row;
         }
 
-        // 動態建立一個「節點卡片」的 HTML 結構
         function createNodeCard(id, data = {}) {
             const card = document.createElement('div');
             card.className = 'node-card';
@@ -475,7 +555,6 @@
         </div>
     `;
 
-            // 結局切換邏輯 (隱藏/顯示選項)
             const chkEnd = card.querySelector('.node-isEnd');
             const selWin = card.querySelector('.node-win');
             const optSection = card.querySelector('.options-section');
@@ -485,17 +564,14 @@
                 optSection.style.display = checked ? 'none' : 'block';
             });
 
-            // 刪除節點
             card.querySelector('.btn-del-node').onclick = () => {
                 if (confirm('確定要刪除這個節點嗎？')) card.remove();
             };
 
-            // 載入與新增選項
             const optsList = card.querySelector('.options-list');
             if (data.options && data.options.length > 0) {
                 data.options.forEach(opt => optsList.appendChild(createOptionElement(opt.text, opt.next)));
             } else if (!isEnd) {
-                // 預設給一個空選項
                 optsList.appendChild(createOptionElement());
             }
 
@@ -504,8 +580,8 @@
             return card;
         }
 
-        // 將畫面上的表單轉換回 JSON 物件
-        function extractEditorData() {
+        // 提取資料 (strict 模式用於生成網址時，會嚴格檢查 start 節點)
+        function extractEditorData(strict = true) {
             const scriptObj = {};
             let hasStart = false;
 
@@ -536,11 +612,10 @@
                 scriptObj[id] = nodeData;
             });
 
-            if (!hasStart) throw new Error("必須要有一個節點的 ID 命名為 'start' 遊戲才能開始！");
+            if (strict && !hasStart) throw new Error("必須要有一個節點的 ID 命名為 'start' 遊戲才能開始！");
             return scriptObj;
         }
 
-        // 載入編輯器資料
         function loadEditor(scriptObj) {
             nodesContainer.innerHTML = '';
             for (const [id, data] of Object.entries(scriptObj)) {
@@ -550,14 +625,34 @@
 
         btnAddNode.addEventListener('click', () => {
             nodesContainer.appendChild(createNodeCard('new_node_' + Math.floor(Math.random() * 1000)));
-            // 捲動到底部
             nodesContainer.scrollTop = nodesContainer.scrollHeight;
+        });
+
+        // JSON 匯入/匯出互動邏輯
+        btnJsonIo.addEventListener('click', () => {
+            const jsonObj = extractEditorData(false); // 關閉嚴格檢查，允許不完整的劇本匯出
+            jsonTextarea.value = JSON.stringify(jsonObj, null, 4);
+            jsonModal.style.display = 'flex';
+        });
+
+        btnJsonClose.addEventListener('click', () => {
+            jsonModal.style.display = 'none';
+        });
+
+        btnJsonApply.addEventListener('click', () => {
+            try {
+                const parsedData = JSON.parse(jsonTextarea.value);
+                loadEditor(parsedData);
+                jsonModal.style.display = 'none';
+            } catch (e) {
+                alert("JSON 格式有誤，無法套用：\n" + e.message);
+            }
         });
 
         // 生成分享網址
         btnGenerate.addEventListener('click', () => {
             try {
-                const jsonObj = extractEditorData(); // 從 DOM 讀取資料並轉換
+                const jsonObj = extractEditorData(true); // 嚴格檢查，確保可遊玩
                 const jsonStr = JSON.stringify(jsonObj);
                 const encodedData = encodeURIComponent(utf8ToBase64(jsonStr));
                 const baseUrl = window.location.href.split('?')[0];
@@ -566,7 +661,6 @@
                 shareLinkInput.value = shareUrl;
                 shareLinkContainer.style.display = 'flex';
 
-                // 自動複製到剪貼簿
                 shareLinkInput.select();
                 document.execCommand('copy');
                 btnGenerate.innerText = "✅ 連結已生成並複製！";
@@ -582,7 +676,7 @@
         });
 
         /* =========================================
-           User Mode: 遊戲迴圈邏輯 (與先前完全相同)
+           User Mode: 遊戲迴圈邏輯
         ========================================= */
 
         function init() {
@@ -604,7 +698,7 @@
             } else {
                 masterUI.style.display = 'flex';
                 gameUI.style.display = 'none';
-                loadEditor(defaultScript); // 載入預設表單
+                loadEditor(defaultScript);
             }
         }
 
