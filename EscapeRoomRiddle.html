@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密室謎語 - 微型對話遊戲</title>
+    <style>
+        /* 全局與重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            max-height: 800px;
+            position: relative;
+            background: #1e1e1e;
+            border: 2px solid #444;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+        }
+
+        /* Master Mode (編輯器 UI) */
+        #master-ui {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #4CAF50;
+            font-size: 24px;
+        }
+
+        .desc {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            flex-grow: 1;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px;
+            font-family: inherit;
+            resize: none;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #share-link-container {
+            margin-top: 10px;
+            display: none;
+            flex-direction: column;
+        }
+
+        #share-link {
+            padding: 10px;
+            background: #000;
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+
+        /* User Mode (遊戲 UI) */
+        #game-ui {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        #scene-display {
+            flex-grow: 1;
+            background: repeating-linear-gradient(0deg, #111, #111 2px, #1a1a1a 2px, #1a1a1a 4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #scene-image-placeholder {
+            width: 150px;
+            height: 150px;
+            border: 2px dashed #555;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #555;
+            font-size: 40px;
+        }
+
+        #dialogue-container {
+            height: 250px;
+            background: #000;
+            border-top: 3px solid #fff;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #speaker-name {
+            color: #ff9800;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        #dialogue-text {
+            color: #fff;
+            font-size: 16px;
+            line-height: 1.5;
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        #options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-btn {
+            background: #333;
+            text-align: left;
+            padding: 10px 15px;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+
+        .option-btn:hover {
+            background: #555;
+            border-color: #fff;
+        }
+
+        #end-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #end-message {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .win-text {
+            color: #4CAF50;
+        }
+
+        .lose-text {
+            color: #f44336;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <!-- Master Mode: 劇本編輯器 -->
+        <div id="master-ui">
+            <h1>🛠️ 劇本編輯器</h1>
+            <div class="desc">請使用 JSON 格式編輯對話節點。完成後點擊生成專屬遊戲網址。</div>
+            <textarea id="script-editor"></textarea>
+            <button id="btn-generate">生成分享連結</button>
+            <div id="share-link-container">
+                <div class="desc">你的專屬遊戲網址（請複製並分享給玩家）：</div>
+                <input type="text" id="share-link" readonly onclick="this.select()">
+                <button id="btn-test-play" style="margin-top:10px; background:#2196F3;">立即試玩</button>
+            </div>
+        </div>
+
+        <!-- User Mode: 遊戲迴圈與對話介面 -->
+        <div id="game-ui">
+            <div id="scene-display">
+                <div id="scene-image-placeholder">?</div>
+            </div>
+            <div id="dialogue-container">
+                <div id="speaker-name">Speaker</div>
+                <div id="dialogue-text">Dialogue text goes here...</div>
+                <div id="options-container"></div>
+            </div>
+
+            <div id="end-screen">
+                <div id="end-message"></div>
+                <button id="btn-restart" style="width: 200px;">重新開始</button>
+                <button id="btn-to-editor" style="width: 200px; margin-top: 10px; background: #607D8B;">自創劇本</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultScript = {
+            "start": {
+                "speaker": "神秘聲音",
+                "text": "你醒來了。頭很痛，眼前是一扇厚重的鐵門。你記得你是怎麼來到這裡的嗎？",
+                "options": [
+                    { "text": "我什麼都不記得了...", "next": "look_around" },
+                    { "text": "放我出去！", "next": "yell" }
+                ]
+            },
+            "yell": {
+                "speaker": "神秘聲音",
+                "text": "大吼大叫是沒有用的。省點力氣吧，或者用你的腦袋。",
+                "options": [
+                    { "text": "冷靜下來觀察四周", "next": "look_around" }
+                ]
+            },
+            "look_around": {
+                "speaker": "系統",
+                "text": "你環顧四周。左邊有一張破舊的桌子，門上有一個密碼鎖。",
+                "options": [
+                    { "text": "檢查桌子", "next": "table" },
+                    { "text": "直接嘗試輸入密碼", "next": "door_guess" }
+                ]
+            },
+            "table": {
+                "speaker": "系統",
+                "text": "桌子上有一張紙條，上面寫著：「生於塵土，歸於塵土。答案藏在最初的起點。」（提示：0000）",
+                "options": [
+                    { "text": "前往密碼門", "next": "door_try" }
+                ]
+            },
+            "door_guess": {
+                "speaker": "密碼鎖",
+                "text": "請輸入密碼：",
+                "options": [
+                    { "text": "輸入 1234", "next": "bad_end_1" },
+                    { "text": "輸入 0000", "next": "good_end" }
+                ]
+            },
+            "door_try": {
+                "speaker": "密碼鎖",
+                "text": "請輸入密碼：",
+                "options": [
+                    { "text": "輸入 0000", "next": "good_end" }
+                ]
+            },
+            "bad_end_1": {
+                "speaker": "系統",
+                "text": "密碼錯誤！警報大作，房間開始釋放毒氣...",
+                "isEnd": true,
+                "win": false
+            },
+            "good_end": {
+                "speaker": "系統",
+                "text": "密碼正確！鐵門緩緩打開，你迎向了自由的曙光。",
+                "isEnd": true,
+                "win": true
+            }
+        };
+
+        const app = document.getElementById('app');
+        const masterUI = document.getElementById('master-ui');
+        const gameUI = document.getElementById('game-ui');
+        const scriptEditor = document.getElementById('script-editor');
+        const btnGenerate = document.getElementById('btn-generate');
+        const shareLinkContainer = document.getElementById('share-link-container');
+        const shareLinkInput = document.getElementById('share-link');
+        const btnTestPlay = document.getElementById('btn-test-play');
+        const speakerName = document.getElementById('speaker-name');
+        const dialogueText = document.getElementById('dialogue-text');
+        const optionsContainer = document.getElementById('options-container');
+        const endScreen = document.getElementById('end-screen');
+        const endMessage = document.getElementById('end-message');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnToEditor = document.getElementById('btn-to-editor');
+
+        let currentScript = {};
+        let currentNodeId = 'start';
+
+        // 安全的 Base64 編解碼
+        function utf8ToBase64(str) {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+                return String.fromCharCode('0x' + p1);
+            }));
+        }
+        function base64ToUtf8(str) {
+            return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+
+        // 系統初始化
+        function init() {
+            app.style.display = 'flex';
+            const urlParams = new URLSearchParams(window.location.search);
+            const scriptRaw = urlParams.get('script');
+
+            if (scriptRaw) {
+                masterUI.style.display = 'none';
+                gameUI.style.display = 'flex';
+                try {
+                    // 修復：將被瀏覽器誤轉為空白的字元強制轉回 '+'
+                    const safeBase64 = scriptRaw.replace(/ /g, '+');
+                    currentScript = JSON.parse(base64ToUtf8(safeBase64));
+                    startGame();
+                } catch (e) {
+                    alert("劇本解析失敗！網址可能損壞或不完整。\n" + e.message);
+                    window.location.href = window.location.href.split('?')[0];
+                }
+            } else {
+                masterUI.style.display = 'flex';
+                gameUI.style.display = 'none';
+                scriptEditor.value = JSON.stringify(defaultScript, null, 4);
+            }
+        }
+
+        // 產生網址
+        btnGenerate.addEventListener('click', () => {
+            try {
+                const jsonStr = scriptEditor.value;
+                JSON.parse(jsonStr);
+
+                // 修復：生成 URL 時套用 encodeURIComponent，避免 '+' 被破壞
+                const encodedData = encodeURIComponent(utf8ToBase64(jsonStr));
+                const baseUrl = window.location.href.split('?')[0];
+                const shareUrl = baseUrl + '?script=' + encodedData;
+
+                shareLinkInput.value = shareUrl;
+                shareLinkContainer.style.display = 'flex';
+            } catch (e) {
+                alert("JSON 格式有誤，請檢查後再生成！\n錯誤訊息：" + e.message);
+            }
+        });
+
+        btnTestPlay.addEventListener('click', () => {
+            window.location.href = shareLinkInput.value;
+        });
+
+        function startGame() {
+            currentNodeId = 'start';
+            endScreen.style.display = 'none';
+            renderNode();
+        }
+
+        function renderNode() {
+            const node = currentScript[currentNodeId];
+            if (!node) {
+                alert(`錯誤：找不到劇本節點 [${currentNodeId}]`);
+                return;
+            }
+
+            speakerName.innerText = node.speaker || "未知";
+            dialogueText.innerText = node.text || "...";
+            optionsContainer.innerHTML = "";
+
+            if (node.isEnd) {
+                endScreen.style.display = 'flex';
+                endMessage.innerText = node.win ? "✨ 遊戲通關 ✨\n" + node.text : "💀 遊戲結束 💀\n" + node.text;
+                endMessage.className = node.win ? "win-text" : "lose-text";
+                return;
+            }
+
+            if (node.options && node.options.length > 0) {
+                node.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = "▶ " + opt.text;
+                    btn.onclick = () => handleChoice(opt.next);
+                    optionsContainer.appendChild(btn);
+                });
+            } else {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = "▶ (劇本未定義後續，點擊重新開始)";
+                btn.onclick = startGame;
+                optionsContainer.appendChild(btn);
+            }
+        }
+
+        function handleChoice(nextNodeId) {
+            currentNodeId = nextNodeId;
+            renderNode();
+        }
+
+        btnRestart.addEventListener('click', startGame);
+        btnToEditor.addEventListener('click', () => {
+            window.location.href = window.location.href.split('?')[0];
+        });
+
+        init();
+    </script>
+</body>
+
+</html>

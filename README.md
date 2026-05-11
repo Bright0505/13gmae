@@ -12,6 +12,7 @@ JS13K 遊戲合集 — 每款遊戲都在 13KB 以內完成。
 |------|------|
 | [Gloom Runner](https://bright0505.github.io/13gmae/GloomRunner.html) | 在黑暗中探索迷宮，找到出口 |
 | [Core Defender](https://bright0505.github.io/13gmae/OrbitEscort.html) | 保衛核心，抵禦來自四方的敵人 |
+| [Escape Room Riddle](https://bright0505.github.io/13gmae/EscapeRoomRiddle.html) | 微型對話逃脫遊戲 |
 
 ## 關於 JS13K
 
