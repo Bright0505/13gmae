@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>密室謎語 - 微型對話遊戲</title>
+    <title>密室謎語 - 視覺化微型對話遊戲</title>
     <style>
         /* 全局與重置 */
         * {
@@ -26,9 +26,9 @@
 
         #app {
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             height: 100%;
-            max-height: 800px;
+            max-height: 900px;
             position: relative;
             background: #1e1e1e;
             border: 2px solid #444;
@@ -37,45 +37,13 @@
             flex-direction: column;
         }
 
-        /* Master Mode (編輯器 UI) */
-        #master-ui {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-            color: #4CAF50;
-            font-size: 24px;
-        }
-
-        .desc {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 10px;
-        }
-
-        textarea {
-            flex-grow: 1;
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 10px;
-            font-family: inherit;
-            resize: none;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-
+        /* 共通按鈕樣式 */
         button {
             background: #4CAF50;
             color: white;
             border: none;
-            padding: 12px;
-            font-size: 16px;
+            padding: 8px 12px;
+            font-size: 14px;
             cursor: pointer;
             font-family: inherit;
             font-weight: bold;
@@ -87,19 +55,158 @@
             background: #45a049;
         }
 
-        #share-link-container {
-            margin-top: 10px;
-            display: none;
+        button.danger {
+            background: #f44336;
+        }
+
+        button.danger:hover {
+            background: #d32f2f;
+        }
+
+        button.secondary {
+            background: #607D8B;
+        }
+
+        button.secondary:hover {
+            background: #455A64;
+        }
+
+        /* 輸入框樣式 */
+        input[type="text"],
+        textarea,
+        select {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px;
+            font-family: inherit;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        /* Master Mode (視覺化編輯器 UI) */
+        #master-ui {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .header-bar {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .desc {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        #nodes-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            background: #181818;
+            padding: 15px;
+        }
+
+        /* 節點卡片設計 */
+        .node-card {
+            background: #252525;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .node-id-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            margin-right: 20px;
+        }
+
+        .node-id-group label {
+            font-weight: bold;
+            color: #4CAF50;
+            white-space: nowrap;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .end-toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        /* 選項區域設計 */
+        .options-section {
+            background: #1f1f1f;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px dashed #555;
+        }
+
+        .options-section h4 {
+            margin-bottom: 10px;
+            color: #ff9800;
+            font-size: 14px;
+        }
+
+        .option-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .option-row input {
+            flex-grow: 1;
+        }
+
+        .master-actions {
+            display: flex;
+            gap: 10px;
             flex-direction: column;
         }
 
-        #share-link {
-            padding: 10px;
-            background: #000;
-            border: 1px solid #4CAF50;
-            color: #4CAF50;
-            margin-top: 5px;
-            word-break: break-all;
+        #share-link-container {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #444;
         }
 
         /* User Mode (遊戲 UI) */
@@ -213,16 +320,26 @@
 <body>
 
     <div id="app">
-        <!-- Master Mode: 劇本編輯器 -->
+        <!-- Master Mode: 視覺化編輯器 -->
         <div id="master-ui">
-            <h1>🛠️ 劇本編輯器</h1>
-            <div class="desc">請使用 JSON 格式編輯對話節點。完成後點擊生成專屬遊戲網址。</div>
-            <textarea id="script-editor"></textarea>
-            <button id="btn-generate">生成分享連結</button>
-            <div id="share-link-container">
-                <div class="desc">你的專屬遊戲網址（請複製並分享給玩家）：</div>
-                <input type="text" id="share-link" readonly onclick="this.select()">
-                <button id="btn-test-play" style="margin-top:10px; background:#2196F3;">立即試玩</button>
+            <div class="header-bar">
+                <h1>🛠️ 視覺化劇本編輯器</h1>
+                <div class="desc">填寫表單即可設計劇情。請確保必須有一個 ID 為「start」的節點作為開頭。</div>
+            </div>
+
+            <div id="nodes-container">
+                <!-- 節點卡片會動態插入在這裡 -->
+            </div>
+
+            <div class="master-actions">
+                <button id="btn-add-node" class="secondary" style="padding: 12px;">+ 新增劇情節點</button>
+                <button id="btn-generate" style="padding: 12px; font-size: 18px;">✨ 生成分享連結 ✨</button>
+
+                <div id="share-link-container">
+                    <div class="desc">你的專屬遊戲網址（已自動複製，可直接貼上分享）：</div>
+                    <input type="text" id="share-link" readonly onclick="this.select()">
+                    <button id="btn-test-play" style="background:#2196F3;">▶ 立即試玩</button>
+                </div>
             </div>
         </div>
 
@@ -240,104 +357,234 @@
             <div id="end-screen">
                 <div id="end-message"></div>
                 <button id="btn-restart" style="width: 200px;">重新開始</button>
-                <button id="btn-to-editor" style="width: 200px; margin-top: 10px; background: #607D8B;">自創劇本</button>
+                <button id="btn-to-editor" style="width: 200px; margin-top: 10px; background: #607D8B;">回編輯器修改</button>
             </div>
         </div>
     </div>
 
     <script>
+        /** 預設劇本資料 (用於初次載入編輯器) */
         const defaultScript = {
             "start": {
                 "speaker": "神秘聲音",
-                "text": "你醒來了。頭很痛，眼前是一扇厚重的鐵門。你記得你是怎麼來到這裡的嗎？",
-                "options": [
-                    { "text": "我什麼都不記得了...", "next": "look_around" },
-                    { "text": "放我出去！", "next": "yell" }
-                ]
-            },
-            "yell": {
-                "speaker": "神秘聲音",
-                "text": "大吼大叫是沒有用的。省點力氣吧，或者用你的腦袋。",
-                "options": [
-                    { "text": "冷靜下來觀察四周", "next": "look_around" }
-                ]
-            },
-            "look_around": {
-                "speaker": "系統",
-                "text": "你環顧四周。左邊有一張破舊的桌子，門上有一個密碼鎖。",
+                "text": "你醒來了。頭很痛，眼前是一扇厚重的鐵門。你要做什麼？",
                 "options": [
                     { "text": "檢查桌子", "next": "table" },
-                    { "text": "直接嘗試輸入密碼", "next": "door_guess" }
+                    { "text": "嘗試開門", "next": "door" }
                 ]
             },
             "table": {
                 "speaker": "系統",
-                "text": "桌子上有一張紙條，上面寫著：「生於塵土，歸於塵土。答案藏在最初的起點。」（提示：0000）",
+                "text": "桌上有張紙條，寫著：「密碼是 0000」。",
                 "options": [
-                    { "text": "前往密碼門", "next": "door_try" }
+                    { "text": "回去", "next": "start" }
                 ]
             },
-            "door_guess": {
+            "door": {
                 "speaker": "密碼鎖",
                 "text": "請輸入密碼：",
                 "options": [
-                    { "text": "輸入 1234", "next": "bad_end_1" },
+                    { "text": "輸入 1234", "next": "bad_end" },
                     { "text": "輸入 0000", "next": "good_end" }
                 ]
             },
-            "door_try": {
-                "speaker": "密碼鎖",
-                "text": "請輸入密碼：",
-                "options": [
-                    { "text": "輸入 0000", "next": "good_end" }
-                ]
-            },
-            "bad_end_1": {
-                "speaker": "系統",
-                "text": "密碼錯誤！警報大作，房間開始釋放毒氣...",
-                "isEnd": true,
-                "win": false
-            },
-            "good_end": {
-                "speaker": "系統",
-                "text": "密碼正確！鐵門緩緩打開，你迎向了自由的曙光。",
-                "isEnd": true,
-                "win": true
-            }
+            "bad_end": { "speaker": "系統", "text": "密碼錯誤！毒氣釋放...", "isEnd": true, "win": false },
+            "good_end": { "speaker": "系統", "text": "密碼正確！你逃出了密室。", "isEnd": true, "win": true }
         };
 
+        // DOM Elements
         const app = document.getElementById('app');
         const masterUI = document.getElementById('master-ui');
         const gameUI = document.getElementById('game-ui');
-        const scriptEditor = document.getElementById('script-editor');
+        const nodesContainer = document.getElementById('nodes-container');
+        const btnAddNode = document.getElementById('btn-add-node');
         const btnGenerate = document.getElementById('btn-generate');
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLinkInput = document.getElementById('share-link');
         const btnTestPlay = document.getElementById('btn-test-play');
+
+        // Game UI Elements
         const speakerName = document.getElementById('speaker-name');
         const dialogueText = document.getElementById('dialogue-text');
         const optionsContainer = document.getElementById('options-container');
         const endScreen = document.getElementById('end-screen');
         const endMessage = document.getElementById('end-message');
-        const btnRestart = document.getElementById('btn-restart');
-        const btnToEditor = document.getElementById('btn-to-editor');
 
         let currentScript = {};
         let currentNodeId = 'start';
 
         // 安全的 Base64 編解碼
         function utf8ToBase64(str) {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-                return String.fromCharCode('0x' + p1);
-            }));
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) { return String.fromCharCode('0x' + p1); }));
         }
         function base64ToUtf8(str) {
-            return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+            return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
         }
 
-        // 系統初始化
+        /* =========================================
+           Master Mode: 視覺化編輯器核心邏輯
+        ========================================= */
+
+        // 動態建立一個「選項」的 HTML 結構
+        function createOptionElement(optText = '', optNext = '') {
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.innerHTML = `
+        <input type="text" class="opt-text" placeholder="選項文字 (例: 檢查桌子)" value="${optText}">
+        <span>👉 前往節點</span>
+        <input type="text" class="opt-next" placeholder="目標ID (例: table)" value="${optNext}" style="width: 120px;">
+        <button class="danger btn-del-opt">X</button>
+    `;
+            row.querySelector('.btn-del-opt').onclick = () => row.remove();
+            return row;
+        }
+
+        // 動態建立一個「節點卡片」的 HTML 結構
+        function createNodeCard(id, data = {}) {
+            const card = document.createElement('div');
+            card.className = 'node-card';
+
+            const isEnd = data.isEnd || false;
+            const winStr = data.win ? 'true' : 'false';
+
+            card.innerHTML = `
+        <div class="node-header">
+            <div class="node-id-group">
+                <label>節點 ID:</label>
+                <input type="text" class="node-id" value="${id}" placeholder="英文或數字 (必須要有 start)">
+            </div>
+            <button class="danger btn-del-node">刪除此節點</button>
+        </div>
+        <div class="form-group">
+            <input type="text" class="node-speaker" value="${data.speaker || ''}" placeholder="說話者名稱 (例: 神秘聲音)">
+        </div>
+        <div class="form-group">
+            <textarea class="node-text" placeholder="對話內容...">${data.text || ''}</textarea>
+        </div>
+        <div class="end-toggle-group">
+            <label><input type="checkbox" class="node-isEnd" ${isEnd ? 'checked' : ''}> 這是結局節點</label>
+            <select class="node-win" style="display: ${isEnd ? 'block' : 'none'}; width: 150px;">
+                <option value="true" ${winStr === 'true' ? 'selected' : ''}>通關 (Win)</option>
+                <option value="false" ${winStr === 'false' ? 'selected' : ''}>失敗 (Lose)</option>
+            </select>
+        </div>
+        <div class="options-section" style="display: ${isEnd ? 'none' : 'block'};">
+            <h4>分支選項：</h4>
+            <div class="options-list"></div>
+            <button class="secondary btn-add-opt" style="margin-top: 10px;">+ 新增選項</button>
+        </div>
+    `;
+
+            // 結局切換邏輯 (隱藏/顯示選項)
+            const chkEnd = card.querySelector('.node-isEnd');
+            const selWin = card.querySelector('.node-win');
+            const optSection = card.querySelector('.options-section');
+            chkEnd.addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                selWin.style.display = checked ? 'block' : 'none';
+                optSection.style.display = checked ? 'none' : 'block';
+            });
+
+            // 刪除節點
+            card.querySelector('.btn-del-node').onclick = () => {
+                if (confirm('確定要刪除這個節點嗎？')) card.remove();
+            };
+
+            // 載入與新增選項
+            const optsList = card.querySelector('.options-list');
+            if (data.options && data.options.length > 0) {
+                data.options.forEach(opt => optsList.appendChild(createOptionElement(opt.text, opt.next)));
+            } else if (!isEnd) {
+                // 預設給一個空選項
+                optsList.appendChild(createOptionElement());
+            }
+
+            card.querySelector('.btn-add-opt').onclick = () => optsList.appendChild(createOptionElement());
+
+            return card;
+        }
+
+        // 將畫面上的表單轉換回 JSON 物件
+        function extractEditorData() {
+            const scriptObj = {};
+            let hasStart = false;
+
+            document.querySelectorAll('.node-card').forEach(card => {
+                const id = card.querySelector('.node-id').value.trim();
+                if (!id) return;
+                if (id === 'start') hasStart = true;
+
+                const nodeData = {
+                    speaker: card.querySelector('.node-speaker').value.trim(),
+                    text: card.querySelector('.node-text').value.trim(),
+                    isEnd: card.querySelector('.node-isEnd').checked
+                };
+
+                if (nodeData.isEnd) {
+                    nodeData.win = card.querySelector('.node-win').value === 'true';
+                } else {
+                    const options = [];
+                    card.querySelectorAll('.option-row').forEach(row => {
+                        const optText = row.querySelector('.opt-text').value.trim();
+                        const optNext = row.querySelector('.opt-next').value.trim();
+                        if (optText || optNext) {
+                            options.push({ text: optText, next: optNext });
+                        }
+                    });
+                    nodeData.options = options;
+                }
+                scriptObj[id] = nodeData;
+            });
+
+            if (!hasStart) throw new Error("必須要有一個節點的 ID 命名為 'start' 遊戲才能開始！");
+            return scriptObj;
+        }
+
+        // 載入編輯器資料
+        function loadEditor(scriptObj) {
+            nodesContainer.innerHTML = '';
+            for (const [id, data] of Object.entries(scriptObj)) {
+                nodesContainer.appendChild(createNodeCard(id, data));
+            }
+        }
+
+        btnAddNode.addEventListener('click', () => {
+            nodesContainer.appendChild(createNodeCard('new_node_' + Math.floor(Math.random() * 1000)));
+            // 捲動到底部
+            nodesContainer.scrollTop = nodesContainer.scrollHeight;
+        });
+
+        // 生成分享網址
+        btnGenerate.addEventListener('click', () => {
+            try {
+                const jsonObj = extractEditorData(); // 從 DOM 讀取資料並轉換
+                const jsonStr = JSON.stringify(jsonObj);
+                const encodedData = encodeURIComponent(utf8ToBase64(jsonStr));
+                const baseUrl = window.location.href.split('?')[0];
+                const shareUrl = baseUrl + '?script=' + encodedData;
+
+                shareLinkInput.value = shareUrl;
+                shareLinkContainer.style.display = 'flex';
+
+                // 自動複製到剪貼簿
+                shareLinkInput.select();
+                document.execCommand('copy');
+                btnGenerate.innerText = "✅ 連結已生成並複製！";
+                setTimeout(() => btnGenerate.innerText = "✨ 生成分享連結 ✨", 2000);
+
+            } catch (e) {
+                alert("生成失敗：\n" + e.message);
+            }
+        });
+
+        btnTestPlay.addEventListener('click', () => {
+            window.location.href = shareLinkInput.value;
+        });
+
+        /* =========================================
+           User Mode: 遊戲迴圈邏輯 (與先前完全相同)
+        ========================================= */
+
         function init() {
             app.style.display = 'flex';
             const urlParams = new URLSearchParams(window.location.search);
@@ -347,42 +594,19 @@
                 masterUI.style.display = 'none';
                 gameUI.style.display = 'flex';
                 try {
-                    // 修復：將被瀏覽器誤轉為空白的字元強制轉回 '+'
                     const safeBase64 = scriptRaw.replace(/ /g, '+');
                     currentScript = JSON.parse(base64ToUtf8(safeBase64));
                     startGame();
                 } catch (e) {
-                    alert("劇本解析失敗！網址可能損壞或不完整。\n" + e.message);
+                    alert("劇本解析失敗！網址可能損壞。\n" + e.message);
                     window.location.href = window.location.href.split('?')[0];
                 }
             } else {
                 masterUI.style.display = 'flex';
                 gameUI.style.display = 'none';
-                scriptEditor.value = JSON.stringify(defaultScript, null, 4);
+                loadEditor(defaultScript); // 載入預設表單
             }
         }
-
-        // 產生網址
-        btnGenerate.addEventListener('click', () => {
-            try {
-                const jsonStr = scriptEditor.value;
-                JSON.parse(jsonStr);
-
-                // 修復：生成 URL 時套用 encodeURIComponent，避免 '+' 被破壞
-                const encodedData = encodeURIComponent(utf8ToBase64(jsonStr));
-                const baseUrl = window.location.href.split('?')[0];
-                const shareUrl = baseUrl + '?script=' + encodedData;
-
-                shareLinkInput.value = shareUrl;
-                shareLinkContainer.style.display = 'flex';
-            } catch (e) {
-                alert("JSON 格式有誤，請檢查後再生成！\n錯誤訊息：" + e.message);
-            }
-        });
-
-        btnTestPlay.addEventListener('click', () => {
-            window.location.href = shareLinkInput.value;
-        });
 
         function startGame() {
             currentNodeId = 'start';
@@ -393,7 +617,7 @@
         function renderNode() {
             const node = currentScript[currentNodeId];
             if (!node) {
-                alert(`錯誤：找不到劇本節點 [${currentNodeId}]`);
+                alert(`錯誤：劇本走到死胡同，找不到名為 [${currentNodeId}] 的節點！`);
                 return;
             }
 
@@ -430,8 +654,8 @@
             renderNode();
         }
 
-        btnRestart.addEventListener('click', startGame);
-        btnToEditor.addEventListener('click', () => {
+        document.getElementById('btn-restart').addEventListener('click', startGame);
+        document.getElementById('btn-to-editor').addEventListener('click', () => {
             window.location.href = window.location.href.split('?')[0];
         });
 
